@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 )
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {
@@ -54,6 +55,23 @@ func requireMethod(w http.ResponseWriter, r *http.Request, method string) bool {
 	errorJSON(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", map[string]any{
 		"method": r.Method,
 		"allow":  method,
+	})
+	return false
+}
+
+func requireMethods(w http.ResponseWriter, r *http.Request, allowed ...string) bool {
+	for _, m := range allowed {
+		if r.Method == m {
+			return true
+		}
+	}
+
+	// header Allow (best practice HTTP)
+	w.Header().Set("Allow", strings.Join(allowed, ", "))
+
+	errorJSON(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", map[string]any{
+		"method": r.Method,
+		"allow":  allowed,
 	})
 	return false
 }
